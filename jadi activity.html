@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Activity Trainer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Pro Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50/50 text-slate-800 antialiased min-h-screen pb-20">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div class="bg-white/95 rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/20 animate-fadeIn">
+            <div class="text-center mb-6">
+                <div class="inline-flex bg-gradient-to-tr from-blue-500 to-indigo-600 p-4 rounded-2xl text-white shadow-lg shadow-indigo-150 mb-3">
+                    <i class="fa-solid fa-shield-halved text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Activity Trainer</h1>
+                <p class="text-xs text-slate-500 mt-1">Silakan pilih akses masuk aplikasi</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Pilih Role Akses</label>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <button onclick="setLoginRole('trainer')" id="role-btn-trainer" class="py-2.5 px-4 rounded-xl border-2 border-blue-500 text-blue-600 font-bold text-sm bg-blue-50/50 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-user-tie"></i> Trainer
+                        </button>
+                        <button onclick="setLoginRole('admin')" id="role-btn-admin" class="py-2.5 px-4 rounded-xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-user-gear"></i> Admin
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Kata Sandi (Password)</label>
+                    <div class="relative">
+                        <input type="password" id="login-password" placeholder="Masukkan password" class="w-full bg-slate-100 border border-transparent rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition">
+                        <span class="absolute left-3.5 top-3.5 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                    </div>
+                    <p id="login-error" class="text-red-500 text-xs mt-1.5 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i> Password salah!</p>
+                </div>
+
+                <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200 active:scale-[0.98] transition text-sm mt-2">
+                    Masuk Aplikasi <i class="fa-solid fa-arrow-right-to-bracket ml-1.5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER (HIDDEN UNTIL LOGIN) -->
+    <div id="main-app" class="hidden">
+        <!-- Bottom Navigation Bar (Handphone Version) -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-100 shadow-xl flex justify-around py-3 z-40 md:hidden">
+            <button onclick="switchTab('tab-beranda')" class="nav-btn text-blue-600 flex flex-col items-center text-[10px] gap-1 font-semibold">
+                <i class="fa-solid fa-house-chimney text-lg"></i> Beranda
+            </button>
+            <button onclick="switchTab('tab-trainer')" class="nav-btn text-slate-400 flex flex-col items-center text-[10px] gap-1 font-semibold">
+                <i class="fa-solid fa-user-plus text-lg"></i> + Trainer
+            </button>
+            <button onclick="switchTab('tab-history')" class="nav-btn text-slate-400 flex flex-col items-center text-[10px] gap-1 font-semibold">
+                <i class="fa-solid fa-list-check text-lg"></i> Riwayat
+            </button>
+            <button onclick="switchTab('tab-analytics')" class="nav-btn text-slate-400 flex flex-col items-center text-[10px] gap-1 font-semibold">
+                <i class="fa-solid fa-chart-pie text-lg"></i> Grafik
+            </button>
+        </div>
+
+        <!-- Header -->
+        <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 py-4 sticky top-0 z-30 shadow-sm">
+            <div class="max-w-md mx-auto flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-tr from-blue-500 to-indigo-600 p-2.5 rounded-2xl text-white shadow-md shadow-indigo-100">
+                        <i class="fa-solid fa-chalkboard-user text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-extrabold text-slate-800 tracking-tight">TrainerLog</h1>
+                        <span id="badge-role-display" class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100">Trainer Mode</span>
+                    </div>
+                </div>
+                <!-- Desktop Nav Navigation -->
+                <div class="hidden md:flex gap-4 text-xs font-bold text-slate-500">
+                    <button onclick="switchTab('tab-beranda')" class="hover:text-blue-600">Beranda</button>
+                    <button onclick="switchTab('tab-trainer')" class="hover:text-blue-600">Trainer</button>
+                    <button onclick="switchTab('tab-history')" class="hover:text-blue-600">Riwayat</button>
+                    <button onclick="switchTab('tab-analytics')" class="hover:text-blue-600">Grafik</button>
+                </div>
+                <button onclick="handleLogout()" class="text-slate-400 hover:text-red-500 transition"><i class="fa-solid fa-power-off text-lg"></i></button>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <main class="max-w-md mx-auto px-4 mt-6">
+
+            <!-- TAB 1: BERANDA & LOG AKTIVITAS (DISATUKAN) -->
+            <section id="tab-beranda" class="tab-content block animate-fadeIn space-y-6">
+                <!-- Statistik Ringkasan -->
+                <div class="bg-gradient-to-tr from-slate-900 to-slate-850 text-white rounded-3xl p-5 shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl"><i class="fa-solid fa-chart-line"></i></div>
+                    <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Daily Activity Bulan Ini</p>
+                    <h2 id="total-activities-month" class="text-4xl font-extrabold mt-1 tracking-tight">0</h2>
+                    <div class="flex items-center gap-2 mt-4 text-xs bg-white/10 w-fit px-3 py-1.5 rounded-full backdrop-blur-sm">
+                        <span class="inline-block w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
+                        <span class="font-medium text-slate-200">Sistem Berjalan Aktif</span>
+                    </div>
+                </div>
+
+                <!-- CARI TRAINER UNTUK LIHAT BIODATA LENGKAP -->
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100/80">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-magnifying-glass text-blue-500"></i>
+                        <h2 class="text-sm font-extrabold text-slate-800">Cari & Detail Biodata Trainer</h2>
+                    </div>
+                    <div class="space-y-3">
+                        <select id="search-trainer-select" onchange="viewTrainerProfile(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition">
+                            <option value="">-- Pilih Nama Trainer --</option>
+                        </select>
+
+                        <!-- Area Biodata Lengkap (Tampil Dinamis) -->
+                        <div id="trainer-biodata-card" class="bg-gradient-to-b from-slate-50 to-white border border-slate-100 rounded-2xl p-4 hidden animate-fadeIn">
+                            <!-- Detail diisi JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LOG FORM AKTIVITAS -->
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100/80">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><i class="fa-solid fa-calendar-check text-sm"></i></div>
+                        <h2 class="text-sm font-extrabold text-slate-800">Input Daily Activity</h2>
+                    </div>
+                    
+                    <form id="form-activity" onsubmit="saveActivity(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pilih Trainer Pelaksana</label>
+                            <select id="act-trainer" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                                <option value="">-- Pilih Trainer --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Pilih Daily Activity (Bisa pilih > 1)</label>
+                            <div class="grid grid-cols-2 gap-2" id="activity-checkbox-group">
+                                <label class="border border-slate-200 rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50/50 active:scale-95 transition bg-white relative">
+                                    <input type="checkbox" name="activity-type" value="In Class Training (NEW)" class="absolute top-2.5 right-2.5 accent-indigo-600">
+                                    <i class="fa-solid fa-graduation-cap text-indigo-500 text-base mb-1"></i>
+                                    <span class="text-[11px] font-bold">In Class (NEW)</span>
+                                </label>
+                                <label class="border border-slate-200 rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50/50 active:scale-95 transition bg-white relative">
+                                    <input type="checkbox" name="activity-type" value="In Class Training (Existing)" class="absolute top-2.5 right-2.5 accent-amber-600">
+                                    <i class="fa-solid fa-chalkboard-user text-amber-500 text-base mb-1"></i>
+                                    <span class="text-[11px] font-bold">In Class (Exist)</span>
+                                </label>
+                                <label class="border border-slate-200 rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50/50 active:scale-95 transition bg-white relative">
+                                    <input type="checkbox" name="activity-type" value="Tandem Lapangan" class="absolute top-2.5 right-2.5 accent-emerald-600">
+                                    <i class="fa-solid fa-users-gear text-emerald-500 text-base mb-1"></i>
+                                    <span class="text-[11px] font-bold">Tandem Lapangan</span>
+                                </label>
+                                <label class="border border-slate-200 rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50/50 active:scale-95 transition bg-white relative" onclick="toggleCoachingClinicField()">
+                                    <input type="checkbox" id="check-coaching" name="activity-type" value="Coaching Clinic" class="absolute top-2.5 right-2.5 accent-rose-600">
+                                    <i class="fa-solid fa-comments text-rose-500 text-base mb-1"></i>
+                                    <span class="text-[11px] font-bold">Coaching Clinic</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- INPUT DETAIL MATERI (MUNCUL JIKA COACHING CLINIC DIPILIH) -->
+                        <div id="field-coaching-materi" class="hidden animate-fadeIn">
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Materi Coaching Clinic</label>
+                            <textarea id="act-materi" placeholder="Jelaskan materi coaching yang disampaikan..." rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tanggal Kegiatan</label>
+                                <input type="date" id="act-date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Jumlah Peserta</label>
+                                <input type="number" id="act-participants" required min="1" placeholder="cth: 12" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Jam Masuk</label>
+                                <input type="time" id="act-time-in" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Jam Keluar</label>
+                                <input type="time" id="act-time-out" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl py-3 font-semibold text-sm shadow-md shadow-blue-200 hover:opacity-95 active:scale-[0.99] transition mt-2">
+                            Simpan Aktivitas <i class="fa-solid fa-paper-plane ml-1"></i>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+
+            <!-- TAB 2: TAMBAH TRAINER -->
+            <section id="tab-trainer" class="tab-content hidden animate-fadeIn">
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100/80">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg"><i class="fa-solid fa-user-plus text-sm"></i></div>
+                        <h2 class="text-sm font-extrabold text-slate-800">Registrasi Trainer Baru</h2>
+                    </div>
+
+                    <form id="form-trainer" onsubmit="saveTrainer(event)" class="space-y-4">
+                        <input type="hidden" id="tr-edit-id" value="">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Lengkap</label>
+                            <input type="text" id="tr-name" required placeholder="Nama Lengkap Trainer" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Sales Code</label>
+                                <input type="text" id="tr-code" required placeholder="Contoh: SL001" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Kota</label>
+                                <input type="text" id="tr-city" required placeholder="Contoh: Bandung" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">No. WhatsApp</label>
+                                <input type="text" id="tr-whatsapp" required placeholder="Contoh: 08123xxx" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama SPV Trainer Anda</label>
+                                <input type="text" id="tr-spv" required placeholder="Nama Supervisor" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Jabatan</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 bg-white">
+                                    <input type="radio" name="tr-role" value="SPV Trainer" checked class="accent-indigo-600">
+                                    <span class="text-xs font-semibold text-slate-700">SPV Trainer</span>
+                                </label>
+                                <label class="border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 bg-white">
+                                    <input type="radio" name="tr-role" value="Trainer" class="accent-indigo-600">
+                                    <span class="text-xs font-semibold text-slate-700">Trainer</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Foto Trainer (Maks. 1MB)</label>
+                            <input type="file" id="tr-photo" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition">
+                            <p class="text-[10px] text-slate-400 mt-1">Gunakan foto profil formal dengan format JPG/PNG.</p>
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl py-3 font-semibold text-sm shadow-md hover:opacity-95 active:scale-[0.99] transition mt-2">
+                            Daftarkan Trainer <i class="fa-solid fa-check ml-1"></i>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+
+            <!-- TAB 3: RIWAYAT & DETAIL -->
+            <section id="tab-history" class="tab-content hidden animate-fadeIn space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-slate-700"></i>
+                        <h2 class="text-sm font-extrabold text-slate-800">Detail Aktivitas</h2>
+                    </div>
+                    <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:bg-emerald-700 transition">
+                        <i class="fa-solid fa-file-excel"></i> CSV Excel
+                    </button>
+                </div>
+
+                <!-- Input Pencarian Log -->
+                <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100/80 flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm pl-1"></i>
+                    <input type="text" id="search-log-input" oninput="renderActivities()" placeholder="Cari berdasarkan nama trainer..." class="w-full text-xs bg-transparent focus:outline-none">
+                </div>
+
+                <div id="activity-list" class="space-y-3">
+                    <!-- Data Log Aktivitas akan muncul di sini secara dinamis -->
+                </div>
+            </section>
+
+
+            <!-- TAB 4: GRAFIK & ANALISIS -->
+            <section id="tab-analytics" class="tab-content hidden animate-fadeIn space-y-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-purple-600"></i>
+                    <h2 class="text-sm font-extrabold text-slate-800">Grafik Aktivitas Per Trainer</h2>
+                </div>
+                
+                <div id="charts-container" class="space-y-4">
+                    <!-- Grafik mini per trainer akan digambar di sini -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Script Logika Aplikasi -->
+    <script>
+        // Default Mock Data - 10 Trainer Awal
+        const initialTrainers = [
+            { id: "1", name: "Ahmad Subarjo", code: "TR001", city: "Bandung", role: "SPV Trainer", whatsapp: "081234567801", spv: "Internal Pusat", photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200" },
+            { id: "2", name: "Siti Nurhaliza", code: "TR002", city: "Jakarta", role: "Trainer", whatsapp: "081234567802", spv: "Ahmad Subarjo", photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200" },
+            { id: "3", name: "Budi Hermawan", code: "TR003", city: "Surabaya", role: "Trainer", whatsapp: "081234567803", spv: "Ahmad Subarjo", photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=200" },
+            { id: "4", name: "Dewi Lestari", code: "TR004", city: "Yogyakarta", role: "Trainer", whatsapp: "081234567804", spv: "Ahmad Subarjo", photo: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=200" },
+            { id: "5", name: "Eko Prasetyo", code: "TR005", city: "Semarang", role: "SPV Trainer", whatsapp: "081234567805", spv: "Internal Pusat", photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200" },
+            { id: "6", name: "Fitri Handayani", code: "TR006", city: "Medan", role: "Trainer", whatsapp: "081234567806", spv: "Eko Prasetyo", photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200" },
+            { id: "7", name: "Gunawan Wibisono", code: "TR007", city: "Makassar", role: "Trainer", whatsapp: "081234567807", spv: "Eko Prasetyo", photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200" },
+            { id: "8", name: "Hendra Wijaya", code: "TR008", city: "Denpasar", role: "Trainer", whatsapp: "081234567808", spv: "Eko Prasetyo", photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=200" },
+            { id: "9", name: "Indah Permata", code: "TR009", city: "Palembang", role: "Trainer", whatsapp: "081234567809", spv: "Ahmad Subarjo", photo: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=200" },
+            { id: "10", name: "Joko Susilo", code: "TR010", city: "Balikpapan", role: "Trainer", whatsapp: "081234567810", spv: "Eko Prasetyo", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200" }
+        ];
+
+        // Default Mock Data - Kegiatan Acak Berjalan
+        const initialActivities = [
+            { id: "a1", trainerId: "2", types: ["In Class Training (NEW)", "Coaching Clinic"], date: "2026-07-10", timeIn: "08:00", timeOut: "12:00", participants: 15, materi: "Pengenalan Produk Digital Core Baru" },
+            { id: "a2", trainerId: "3", types: ["Tandem Lapangan"], date: "2026-07-11", timeIn: "13:00", timeOut: "17:00", participants: 8, materi: "" },
+            { id: "a3", trainerId: "4", types: ["In Class Training (Existing)"], date: "2026-07-12", timeIn: "09:00", timeOut: "11:30", participants: 25, materi: "" },
+            { id: "a4", trainerId: "6", types: ["Coaching Clinic"], date: "2026-07-13", timeIn: "10:00", timeOut: "12:00", participants: 5, materi: "Evaluasi Pelayanan Konsumen" },
+            { id: "a5", trainerId: "7", types: ["Tandem Lapangan", "In Class Training (NEW)"], date: "2026-07-14", timeIn: "08:30", timeOut: "15:00", participants: 12, materi: "" },
+            { id: "a6", trainerId: "8", types: ["In Class Training (Existing)"], date: "2026-07-15", timeIn: "14:00", timeOut: "16:00", participants: 20, materi: "" },
+            { id: "a7", trainerId: "9", types: ["Coaching Clinic"], date: "2026-07-15", timeIn: "09:00", timeOut: "11:00", participants: 4, materi: "Penanganan komplain pelanggan" },
+            { id: "a8", trainerId: "1", types: ["In Class Training (NEW)"], date: "2026-07-16", timeIn: "08:00", timeOut: "12:00", participants: 30, materi: "" }
+        ];
+
+        // Memuat atau menginisiasi basis data lokal
+        let trainers = JSON.parse(localStorage.getItem('ts_v2_trainers')) || initialTrainers;
+        let activities = JSON.parse(localStorage.getItem('ts_v2_activities')) || initialActivities;
+        let currentRole = 'trainer'; // 'trainer' atau 'admin'
+
+        window.onload = function() {
+            document.getElementById('act-date').value = new Date().toISOString().split('T')[0];
+            updateTotalMonthCount();
+            updateTrainerDropdowns();
+            renderActivities();
+            renderCharts();
+        };
+
+        function syncStorage() {
+            localStorage.setItem('ts_v2_trainers', JSON.stringify(trainers));
+            localStorage.setItem('ts_v2_activities', JSON.stringify(activities));
+            updateTotalMonthCount();
+        }
+
+        // --- SISTEM LOGIN ---
+        function setLoginRole(role) {
+            currentRole = role;
+            const bTrainer = document.getElementById('role-btn-trainer');
+            const bAdmin = document.getElementById('role-btn-admin');
+            
+            if (role === 'trainer') {
+                bTrainer.className = "py-2.5 px-4 rounded-xl border-2 border-blue-500 text-blue-600 font-bold text-sm bg-blue-50/50 flex items-center justify-center gap-2";
+                bAdmin.className = "py-2.5 px-4 rounded-xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 flex items-center justify-center gap-2";
+            } else {
+                bAdmin.className = "py-2.5 px-4 rounded-xl border-2 border-indigo-600 text-indigo-600 font-bold text-sm bg-indigo-50/50 flex items-center justify-center gap-2";
+                bTrainer.className = "py-2.5 px-4 rounded-xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 flex items-center justify-center gap-2";
+            }
+        }
+
+        function handleLogin() {
+            const pass = document.getElementById('login-password').value;
+            const errorText = document.getElementById('login-error');
+            
+            if (currentRole === 'trainer' && pass === 'trainer') {
+                enterApp('Trainer Mode');
+            } else if (currentRole === 'admin' && pass === 'admin123') {
+                enterApp('Administrator Mode');
+            } else {
+                errorText.classList.remove('hidden');
+            }
+        }
+
+        function enterApp(roleLabel) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('badge-role-display').innerText = roleLabel;
+            renderActivities();
+            renderCharts();
+        }
+
+        function handleLogout() {
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-error').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+        }
+
+        // --- NAVIGASI TAB ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.replace('text-blue-600', 'text-slate-400');
+            });
+            
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.replace('text-slate-400', 'text-blue-600');
+            }
+
+            if (tabId === 'tab-analytics') {
+                renderCharts();
+            }
+        }
+
+        // --- BERANDA & BIODATA TRAINER ---
+        function updateTotalMonthCount() {
+            const currentMonthStr = new Date().toISOString().substring(0, 7); // YYYY-MM
+            const thisMonthActs = activities.filter(act => act.date.substring(0, 7) === currentMonthStr);
+            document.getElementById('total-activities-month').innerText = thisMonthActs.length;
+        }
+
+        function updateTrainerDropdowns() {
+            const selectAct = document.getElementById('act-trainer');
+            const selectSearch = document.getElementById('search-trainer-select');
+            
+            selectAct.innerHTML = '<option value="">-- Pilih Trainer --</option>';
+            selectSearch.innerHTML = '<option value="">-- Pilih Nama Trainer --</option>';
+            
+            trainers.forEach(t => {
+                selectAct.innerHTML += `<option value="${t.id}">${t.name} (${t.code})</option>`;
+                selectSearch.innerHTML += `<option value="${t.id}">${t.name} (${t.code})</option>`;
+            });
+        }
+
+        function viewTrainerProfile(trainerId) {
+            const card = document.getElementById('trainer-biodata-card');
+            if (!trainerId) {
+                card.classList.add('hidden');
+                return;
+            }
+            
+            const t = trainers.find(item => item.id === trainerId);
+            if (!t) return;
+
+            const totalActs = activities.filter(a => a.trainerId === t.id).length;
+            const photoUrl = t.photo || 'https://via.placeholder.com/150';
+
+            // Cek apakah Admin untuk tombol edit/hapus
+            const actionButtons = currentRole === 'admin' ? `
+                <div class="flex gap-2 mt-4">
+                    <button onclick="editTrainer('${t.id}')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-1.5 px-3 rounded-lg text-xs font-bold transition">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit Biodata
+                    </button>
+                    <button onclick="deleteTrainer('${t.id}')" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-1.5 px-3 rounded-lg text-xs font-bold transition">
+                        <i class="fa-solid fa-trash-can"></i> Hapus
+                    </button>
+                </div>
+            ` : '';
+
+            card.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <img src="${photoUrl}" class="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md" alt="Avatar">
+                    <div class="flex-1">
+                        <h3 class="font-extrabold text-slate-800 text-base">${t.name}</h3>
+                        <p class="text-xs font-bold text-indigo-600">${t.role} • ${t.code}</p>
+                        <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-map-location-dot mr-1"></i> ${t.city}</p>
+                    </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-[11px]">
+                    <div>
+                        <p class="text-slate-400 font-semibold">No. WhatsApp</p>
+                        <p class="text-slate-700 font-bold"><i class="fa-brands fa-whatsapp text-emerald-500"></i> ${t.whatsapp}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 font-semibold">Nama SPV</p>
+                        <p class="text-slate-700 font-bold">${t.spv}</p>
+                    </div>
+                </div>
+                <div class="mt-3 bg-blue-50/50 p-2.5 rounded-xl flex items-center justify-between text-xs">
+                    <span class="text-slate-600 font-bold">Total Daily Activity Bulan Ini</span>
+                    <span class="bg-blue-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">${totalActs} Aktif</span>
+                </div>
+                ${actionButtons}
+            `;
+            card.classList.remove('hidden');
+        }
+
+        // --- TAMBAH / EDIT TRAINER ---
+        function saveTrainer(e) {
+            e.preventDefault();
+            const id = document.getElementById('tr-edit-id').value;
+            const name = document.getElementById('tr-name').value;
+            const code = document.getElementById('tr-code').value;
+            const city = document.getElementById('tr-city').value;
+            const whatsapp = document.getElementById('tr-whatsapp').value;
+            const spv = document.getElementById('tr-spv').value;
+            const role = document.querySelector('input[name="tr-role"]:checked').value;
+            const photoInput = document.getElementById('tr-photo');
+
+            const proceedSave = (photoBase64) => {
+                if (id) {
+                    // Update mode
+                    const index = trainers.findIndex(t => t.id === id);
+                    if (index !== -1) {
+                        trainers[index] = { 
+                            ...trainers[index], name, code, city, whatsapp, spv, role, 
+                            photo: photoBase64 || trainers[index].photo 
+                        };
+                    }
+                    alert("✓ Berhasil mengedit biodata trainer!");
+                } else {
+                    // Simpan baru
+                    const newTrainer = {
+                        id: Date.now().toString(),
+                        name, code, city, whatsapp, spv, role,
+                        photo: photoBase64 || 'https://via.placeholder.com/150'
+                    };
+                    trainers.push(newTrainer);
+                    alert("⚡ Pendaftaran Trainer baru sukses!");
+                }
+                
+                syncStorage();
+                updateTrainerDropdowns();
+                document.getElementById('form-trainer').reset();
+                document.getElementById('tr-edit-id').value = '';
+                switchTab('tab-beranda');
+            };
+
+            // Baca File Foto jika diunggah
+            if (photoInput.files && photoInput.files[0]) {
+                const file = photoInput.files[0];
+                if (file.size > 1024 * 1024) {
+                    alert("Gagal: Ukuran foto maksimal adalah 1MB!");
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    proceedSave(reader.result);
+                }
+                reader.readAsDataURL(file);
+            } else {
+                proceedSave(null);
+            }
+        }
+
+        function editTrainer(id) {
+            const t = trainers.find(item => item.id === id);
+            if (!t) return;
+            
+            document.getElementById('tr-edit-id').value = t.id;
+            document.getElementById('tr-name').value = t.name;
+            document.getElementById('tr-code').value = t.code;
+            document.getElementById('tr-city').value = t.city;
+            document.getElementById('tr-whatsapp').value = t.whatsapp;
+            document.getElementById('tr-spv').value = t.spv;
+            
+            const roles = document.getElementsByName('tr-role');
+            roles.forEach(r => { if(r.value === t.role) r.checked = true; });
+
+            switchTab('tab-trainer');
+            alert("Mode Edit: Silakan sesuaikan data dan tekan 'Daftarkan Trainer' untuk menyimpan.");
+        }
+
+        function deleteTrainer(id) {
+            if (confirm("Apakah Anda yakin ingin menghapus data trainer ini beserta seluruh history aktivitasnya?")) {
+                trainers = trainers.filter(t => t.id !== id);
+                activities = activities.filter(a => a.trainerId !== id);
+                syncStorage();
+                updateTrainerDropdowns();
+                document.getElementById('trainer-biodata-card').classList.add('hidden');
+                alert("Data trainer berhasil dihapus.");
+                renderActivities();
+                renderCharts();
+            }
+        }
+
+        // --- TAMBAH / EDIT AKTIVITAS ---
+        function toggleCoachingClinicField() {
+            setTimeout(() => {
+                const isCoaching = document.getElementById('check-coaching').checked;
+                const field = document.getElementById('field-coaching-materi');
+                if (isCoaching) {
+                    field.classList.remove('hidden');
+                } else {
+                    field.classList.add('hidden');
+                    document.getElementById('act-materi').value = '';
+                }
+            }, 50);
+        }
+
+        function saveActivity(e) {
+            e.preventDefault();
+            const trainerId = document.getElementById('act-trainer').value;
+            const date = document.getElementById('act-date').value;
+            const participants = parseInt(document.getElementById('act-participants').value) || 0;
+            const timeIn = document.getElementById('act-time-in').value;
+            const timeOut = document.getElementById('act-time-out').value;
+            const materi = document.getElementById('act-materi').value;
+
+            // Membaca checkbox jenis kegiatan
+            const checkboxes = document.querySelectorAll('input[name="activity-type"]:checked');
+            const selectedTypes = Array.from(checkboxes).map(cb => cb.value);
+
+            if (selectedTypes.length === 0) {
+                alert("Harap pilih minimal satu Jenis Kegiatan!");
+                return;
+            }
+
+            const newActivity = {
+                id: Date.now().toString(),
+                trainerId,
+                types: selectedTypes,
+                date,
+                timeIn,
+                timeOut,
+                participants,
+                materi: selectedTypes.includes("Coaching Clinic") ? materi : ""
+            };
+
+            activities.unshift(newActivity);
+            syncStorage();
+            renderActivities();
+            
+            alert("✓ Sukses: Log daily activity baru berhasil disimpan!");
+            
+            // Reset formulir
+            document.getElementById('form-activity').reset();
+            document.getElementById('act-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('field-coaching-materi').classList.add('hidden');
+            switchTab('tab-history');
+        }
+
+        function deleteActivity(id) {
+            if (confirm("Hapus log aktivitas ini?")) {
+                activities = activities.filter(a => a.id !== id);
+                syncStorage();
+                renderActivities();
+                renderCharts();
+                alert("Log aktivitas berhasil dihapus.");
+            }
+        }
+
+        // --- RENDER DAFTAR RIWAYAT AKTIVITAS ---
+        function renderActivities() {
+            const container = document.getElementById('activity-list');
+            const searchVal = document.getElementById('search-log-input').value.toLowerCase();
+
+            let filtered = activities;
+            if (searchVal) {
+                filtered = activities.filter(act => {
+                    const trainer = trainers.find(t => t.id === act.trainerId);
+                    return trainer && trainer.name.toLowerCase().includes(searchVal);
+                });
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center p-8 text-slate-400 text-xs">Belum ada rekaman daily activity harian.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            filtered.forEach(act => {
+                const trainer = trainers.find(t => t.id === act.trainerId) || { name: 'Unknown', role: '-', code: '-', city: '-' };
+                
+                // Konversi array jenis kegiatan menjadi badge
+                let badgesMarkup = "";
+                act.types.forEach(type => {
+                    let color = "bg-blue-50 text-blue-600 border-blue-100";
+                    if(type.includes("Existing")) color = "bg-amber-50 text-amber-600 border-amber-100";
+                    if(type.includes("Lapangan")) color = "bg-emerald-50 text-emerald-600 border-emerald-100";
+                    if(type.includes("Coaching")) color = "bg-rose-50 text-rose-600 border-rose-100";
+                    badgesMarkup += `<span class="text-[9px] font-bold px-2 py-0.5 rounded-md border ${color}">${type}</span> `;
+                });
+
+                const coachingMateriMarkup = (act.types.includes("Coaching Clinic") && act.materi) ? `
+                    <div class="mt-2 bg-rose-50/50 p-2 rounded-xl text-[11px] text-rose-700">
+                        <strong>Materi Coaching:</strong> "${act.materi}"
+                    </div>
+                ` : '';
+
+                const adminActionsMarkup = currentRole === 'admin' ? `
+                    <div class="flex justify-end gap-1 mt-2">
+                        <button onclick="deleteActivity('${act.id}')" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1"><i class="fa-solid fa-trash-can"></i> Hapus</button>
+                    </div>
+                ` : '';
+
+                container.innerHTML += `
+                    <div class="bg-white rounded-3xl p-4 border border-slate-100/80 shadow-sm flex flex-col gap-2 animate-fadeIn">
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center gap-2.5">
+                                <img src="${trainer.photo || 'https://via.placeholder.com/150'}" class="w-9 h-9 rounded-xl object-cover shadow-sm">
+                                <div>
+                                    <h3 class="font-extrabold text-slate-800 text-xs">${trainer.name}</h3>
+                                    <p class="text-[10px] text-slate-400 font-semibold">${trainer.role} • ${trainer.code}</p>
+                                </div>
+                            </div>
+                            <span class="text-slate-400 text-[10px] font-bold"><i class="fa-solid fa-users mr-1"></i> ${act.participants} Peserta</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1 mt-1">${badgesMarkup}</div>
+                        ${coachingMateriMarkup}
+                        <div class="border-t border-dashed border-slate-100 my-1"></div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-500 font-medium">
+                            <span><i class="fa-regular fa-calendar-days mr-1 text-slate-400"></i> ${act.date}</span>
+                            <span><i class="fa-regular fa-clock mr-1 text-slate-400"></i> ${act.timeIn} - ${act.timeOut}</span>
+                        </div>
+                        ${adminActionsMarkup}
+                    </div>
+                `;
+            });
+        }
+
+        // --- RENDER GRAFIK INTERAKTIF ---
+        let chartInstances = {};
+        function renderCharts() {
+            const container = document.getElementById('charts-container');
+            container.innerHTML = '';
+
+            trainers.forEach(trainer => {
+                const trainerActs = activities.filter(a => a.trainerId === trainer.id);
+                
+                // Menghitung jumlah per kegiatan harian
+                const counts = { "In Class (NEW)": 0, "In Class (Exist)": 0, "Tandem": 0, "Coaching": 0 };
+                let totalParticipants = 0;
+
+                trainerActs.forEach(a => {
+                    totalParticipants += (a.participants || 0);
+                    a.types.forEach(type => {
+                        if(type.includes("NEW")) counts["In Class (NEW)"]++;
+                        else if(type.includes("Existing")) counts["In Class (Exist)"]++;
+                        else if(type.includes("Lapangan")) counts["Tandem"]++;
+                        else if(type.includes("Coaching")) counts["Coaching"]++;
+                    });
+                });
+
+                container.innerHTML += `
+                    <div class="bg-white rounded-3xl p-4 border border-slate-100/80 shadow-sm space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <img src="${trainer.photo || 'https://via.placeholder.com/150'}" class="w-9 h-9 rounded-xl object-cover shadow-sm">
+                                <div>
+                                    <h4 class="font-extrabold text-xs text-slate-800">${trainer.name}</h4>
+                                    <p class="text-[10px] text-slate-400 font-bold">${trainer.role} (${trainer.code})</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="bg-indigo-50 text-indigo-700 font-extrabold text-[10px] px-2 py-0.5 rounded-full inline-block">
+                                    ${trainerActs.length} Kegiatan
+                                </div>
+                                <p class="text-[9px] text-slate-400 font-bold mt-1"><i class="fa-solid fa-users"></i> ${totalParticipants} Peserta</p>
+                            </div>
+                        </div>
+                        <div class="h-32 w-full">
+                            <canvas id="chart-${trainer.id}"></canvas>
+                        </div>
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    const ctx = document.getElementById(`chart-${trainer.id}`).getContext('2d');
+                    if(chartInstances[trainer.id]) { chartInstances[trainer.id].destroy(); }
+
+                    chartInstances[trainer.id] = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['IC (New)', 'IC (Exist)', 'Tandem', 'Coaching'],
+                            datasets: [{
+                                data: [counts["In Class (NEW)"], counts["In Class (Exist)"], counts["Tandem"], counts["Coaching"]],
+                                backgroundColor: ['#6366f1', '#f59e0b', '#10b981', '#f43f5e'],
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 9, weight: 'bold' } }, grid: { display: false } },
+                                x: { ticks: { font: { size: 9, weight: 'bold' } }, grid: { display: false } }
+                            }
+                        }
+                    });
+                }, 50);
+            });
+        }
+
+        // --- EKSPOR DATA KE EXCEL (CSV) ---
+        function exportToExcel() {
+            if(activities.length === 0) { alert("Tidak ada data aktivitas untuk diekspor!"); return; }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Nama Trainer,Sales Code,Kota,Jabatan,Daily Activity,Tanggal,Jam Masuk,Jam Keluar,Jumlah Peserta,Materi Coaching\n";
+            
+            activities.forEach(act => {
+                const t = trainers.find(trainer => trainer.id === act.trainerId) || {name:'-', code:'-', city:'-', role:'-'};
+                const formattedTypes = act.types.join(" & ");
+                const cleanMateri = act.materi ? act.materi.replace(/"/g, '""') : "";
+                let row = `"${t.name}","${t.code}","${t.city}","${t.role}","${formattedTypes}","${act.date}","${act.timeIn}","${act.timeOut}","${act.participants}","${cleanMateri}"`;
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Daily_Activity_Trainer_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
